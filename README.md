@@ -9,10 +9,6 @@ Requirements
 1. A Transifex account with at least one project and one resource with multiple translations. 
 2. Adobe Photoshop CS* to run script
 
-License
-====================
-All code licensed under the MIT License.
-
 Setup
 ====================
 Note: Only tested with Chrome and Firefox and PhtotoShop for Mac
@@ -31,3 +27,7 @@ Note:  If you want to use a private project and aren't sure of your project name
 11. Next it asks for the localized string, paste in the JSON from step #7
 
 12. Watch it do all of the work for you!
+
+License
+====================
+All code licensed under the MIT License.
