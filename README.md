@@ -8,3 +8,7 @@ Requirements
 
 1. A Transifex account with at least one project and one resource with multiple translations. 
 2. Adobe Photoshop CS* to run script
+
+License
+====================
+All code licensed under the MIT License.
