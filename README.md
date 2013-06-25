@@ -20,8 +20,8 @@ Note: Only tested with Chrome and Firefox and PhtotoShop for Mac
 1. Copy the html file to your favorite web server, or just open it from the file system
 2. Goto www.transifex.com and login
 3. Open 'index.html' in a separate tab
-4. Enter the project name in the first textbox, for this demo use 'localizepsd'
-    Note:  If you want to use a private project and aren't sure of your project name, go back to the Transifex tab and click on your project.  You'll see the exact name in the url like this: www.transifex.com/projects/p/<my project name>
+4. Enter the project name in the first textbox, for this demo use 'localizepsd'   
+Note:  If you want to use a private project and aren't sure of your project name, go back to the Transifex tab and click on your project.  You'll see the exact name in the url like this: www.transifex.com/projects/p/<my project name>   
 5. Tab or select over to the dropdown tab and it should load with a list of resources (this might take awhile if you have > 200 resources).
 6. Select a resource and hit the 'Get Strings' button
 7. Pick a string from the list that appears, which will give you a selectable text box with a JSON of the translations
