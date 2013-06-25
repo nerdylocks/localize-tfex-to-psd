@@ -19,9 +19,10 @@
   }
   textarea {
     width:400px;
-    height:200px;
+    min-height:200px;
+    resize: none;
   }
-  .loading, .error {
+  .loading, .error, .noresource {
     position: absolute;
     top: 30px;
     left: 40%;
@@ -52,6 +53,7 @@
           <br>
           <div class="loading alert alert-success">Fetching Data...</div>
           <div class="error alert alert-error">Error: Fill empty feilds</div>
+          <div class="noresource alert alert-error">Error: Pro</div>
         </div>
         <!--  <div class="span5"><img style="float: right;" src="/img/nitro_logo.png" alt=""></div> -->
 
@@ -66,11 +68,9 @@
             <option value="">Select Resource</option>
           </select>
           <button href="#" class="btn btn-primary btn-large" id="get_strings">Get Strings</button>
-          
         </form>
       </div>
       <div class="span4">
-        <a class="btn btn-large" href="#" id="download_script"><i class="icon-download"></i> Download PS Script</a>
       </div>
     </div>
     <br><br>
@@ -78,7 +78,6 @@
       <div class="span12">
         <div id="trans"></div>
         <div id="strings"></div>
-        
       </div>
     </div>
   </div>
@@ -112,7 +111,10 @@ var Localize = {
   onSuccess: function(callback){
     callback();
   },
-  onError: function(error){console.log(error)},
+  onError: function(error, callback){
+    console.log(error);
+    callback();
+  },
   resourcesUrl:function(){
     return this.API_ENDPOINT + $('#project_name').val() + '/resources/';
   },
@@ -177,7 +179,9 @@ var Localize = {
       success: $.proxy(function(data){
         this.translated[language] = data;
         console.log('Found strings for ' + language.toUpperCase());
-        this.onSuccess($.proxy(this.generateKeyList, this));
+        setTimeout($.proxy(function(){
+          this.onSuccess($.proxy(this.generateKeyList, this));
+        }, this), 500);
       }, this),
       error: function(jqXHR, textStatus, errorThrown){
         this.onError(jqXHR);
@@ -208,8 +212,8 @@ var Localize = {
 
     getAllTranslatedStrings: function(key) {
       var languages = {};
-      $.each(this.AVAILABLE_LANGUAGES, $.proxy(function(index, language) {
-        languages[language] = this.getTranslatedString(language, key);
+      $.each(Localize.AVAILABLE_LANGUAGES, $.proxy(function(index, language) {
+        languages[language] = Localize.getTranslatedString(language, key);
       }, this));
 
       return languages;
@@ -218,7 +222,7 @@ var Localize = {
     generateKeyList: function() { //onclick from "Get strangs" button above
       $('#trans').html("");
       //Generate clickable keys
-      $.each(this.translated['en'], $.proxy(function(index, translated) {
+      $.each(Localize.translated['en'], $.proxy(function(index, translated) {
         var key = $('<a class="key"></a>').text(translated.key);
         $('#trans').append(key);
 
@@ -231,6 +235,8 @@ var Localize = {
     generateTranslatedText: function(key) {
       var textarea = $('<textarea id="strings_to_copy"></textarea>').val(JSON.stringify(this.getAllTranslatedStrings(key)));
       $('#strings').html(textarea);
+      var textareaHeight = $('#strings_to_copy').val().length / 4;
+      $('#strings_to_copy').css('height', textareaHeight + 'px');
     }
   };
 
