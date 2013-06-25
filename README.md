@@ -11,7 +11,7 @@ Requirements
 
 Setup
 ====================
-Note: Only tested with Chrome and Firefox and PhtotoShop for Mac
+Note: Only tested with Chrome and Firefox and Photoshop for Mac
 
 1. Copy the html file to your favorite web server, or just open it from the file system
 2. Goto www.transifex.com and login
