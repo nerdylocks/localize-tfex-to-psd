@@ -109,7 +109,7 @@ var Localize = {
       }
     }, this));
   },
-  onSuccess: function(callback){ 
+  onSuccess: function(callback){
     callback();
   },
   onError: function(error){console.log(error)},
@@ -133,7 +133,7 @@ var Localize = {
         $.each(slugNames, $.proxy(function(i, item){
               this.resourceNames.push(slugNames[i].name);
             }, this));
-        this.onSuccess(this.populateResourceNames);
+        this.onSuccess($.proxy(this.populateResourceNames, this));
       }, this),
       error: function(jqXHR, textStatus, errorThrown){
         console.log(jqXHR, textStatus, errorThrown);
@@ -143,8 +143,8 @@ var Localize = {
   },
   populateResourceNames: function(){
     $('#resource_name').html('');
-    for(i=0; i <= Localize.resourceNames.length; i++){
-      $('#resource_name').append('<option>' + Localize.resourceNames[i] + '</option>');
+    for(i=0; i <= this.resourceNames.length; i++){
+      $('#resource_name').append('<option>' + this.resourceNames[i] + '</option>');
     }
     console.log('resource names populated');
   },
@@ -159,7 +159,7 @@ var Localize = {
               this.AVAILABLE_LANGUAGES.push(value.code);
             }, this));
           if(this.AVAILABLE_LANGUAGES.length != 0){
-            this.onSuccess(this.fetchAllStrings);
+            this.onSuccess($.proxy(this.fetchAllStrings, this));
           } else {
             console.log('cant find avail langs');
           }
@@ -177,8 +177,7 @@ var Localize = {
       success: $.proxy(function(data){
         this.translated[language] = data;
         console.log('Found strings for ' + language.toUpperCase());
-        this.onSuccess(this.generateKeyList);
-        console.log('fetchStrings')
+        this.onSuccess($.proxy(this.generateKeyList, this));
       }, this),
       error: function(jqXHR, textStatus, errorThrown){
         this.onError(jqXHR);
@@ -187,11 +186,9 @@ var Localize = {
   },
 
   fetchAllStrings: function() {
-        $.each(Localize.AVAILABLE_LANGUAGES, $.proxy(function(index, language) { //Go through each item in availableLanguages()
-          Localize.fetchStrings(language, Localize.stringsUrl(language));
+        $.each(this.AVAILABLE_LANGUAGES, $.proxy(function(index, language) { //Go through each item in availableLanguages()
+          this.fetchStrings(language, this.stringsUrl(language));
         }, this));
-        //callback('fetched ' + this.AVAILABLE_LANGUAGES);
-        //this.onSuccess(this.generateKeyList);
     },
 
     getTranslatedString: function(language, key) {
@@ -221,13 +218,13 @@ var Localize = {
     generateKeyList: function() { //onclick from "Get strangs" button above
       $('#trans').html("");
       //Generate clickable keys
-      $.each(Localize.translated['en'], $.proxy(function(index, translated) {
+      $.each(this.translated['en'], $.proxy(function(index, translated) {
         var key = $('<a class="key"></a>').text(translated.key);
         $('#trans').append(key);
 
         key.bind('click', $.proxy(function(event) {
           event.preventDefault();
-          Localize.generateTranslatedText(translated.key); //onclick generate textarea with translated object
+          this.generateTranslatedText(translated.key); //onclick generate textarea with translated object
         }, this));
       }, this));
     },
