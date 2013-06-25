@@ -3,11 +3,9 @@
 <head>
   <title>PO to PSD</title>
 
-  <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+  <link href="css/bootstrap.css" rel="stylesheet">
   <style>
-  .container {
-    width: 940px;
-  }
+
   input[type=text], select {
     height: 43px;
   }
@@ -43,7 +41,7 @@
   }
   </style>
   <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
-  <script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/js/bootstrap.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -51,7 +49,6 @@
       <div class="masterhead">
         <div class="span12">
           <h3 class="muted">PO to PSD</h3>
-
           <br>
           <div class="loading alert alert-success">Fetching Data...</div>
           <div class="error alert alert-error">Error: Fill empty feilds</div>
@@ -61,7 +58,7 @@
       </div>
     </div>
     <div class="row">
-      <div class="span9">
+      <div class="span8">
         <form action="/">
           <input type="text" id="project_name" placeholder="Enter project name" name="project_name">
           <!-- <input type="text" id="resource_name" placeholder="Enter Resource Name" data-provide="typeahead"> -->
@@ -69,11 +66,11 @@
             <option value="">Select Resource</option>
           </select>
           <button href="#" class="btn btn-primary btn-large" id="get_strings">Get Strings</button>
-          <a class="btn btn-large" href="#" id="download_script"><i class="icon-download"></i> Download PS Script</a>
+          
         </form>
       </div>
-      <div class="span3">
-        
+      <div class="span4">
+        <a class="btn btn-large" href="#" id="download_script"><i class="icon-download"></i> Download PS Script</a>
       </div>
     </div>
     <br><br>
@@ -90,15 +87,34 @@
 var Localize = {
   API_ENDPOINT : "https://www.transifex.com/api/2/project/",
   translated : {},
-  AVAILABLE_LANGUAGES: ["en", "de", "el", "it", "es"],
-
+  AVAILABLE_LANGUAGES: [],
+  resourceNames: [],
   init: function(){
-    $.when(this.availableLanguages(), this.fetchAllStrings()).then(setTimeout($.proxy(function(){this.generateKeyList()}, this), 1000));
-  },
+    $('#resource_name').on('focus', $.proxy(function(event){
+        event.preventDefault();
+        if($('#project_name').val() !== ''){
+          this.getResourceNames();
+        }
+    }, this));
 
-  projectsUrl: function(){
-
+    $('form').on('submit', $.proxy(function(event){
+      event.preventDefault();
+      if($('#resource_name').val() != '' && $('#project_name').val() != ''){
+        $('.error').fadeOut();
+        $('.loading').fadeIn();
+        this.availableLanguages();
+        $('.loading').fadeOut();
+      } else {
+        $('.error').fadeIn();
+      }
+    }, this));
   },
+  onSuccess: function(callback){ 
+    console.log(callback +  ' executing...');
+    callback();
+    console.log(callback + ' executed');
+  },
+  onError: function(error){console.log(error)},
   resourcesUrl:function(){
     return this.API_ENDPOINT + $('#project_name').val() + '/resources/';
   },
@@ -119,18 +135,22 @@ var Localize = {
         $.each(slugNames, $.proxy(function(i, item){
               this.resourceNames.push(slugNames[i].name);
             }, this));
-      }, this)
+        this.onSuccess(this.populateResourceNames);
+      }, this),
+      error: function(jqXHR, textStatus, errorThrown){
+        console.log(jqXHR, textStatus, errorThrown);
+        this.onError(jqXHR);
+      }
     });
-
-    setTimeout($.proxy(function(){
-      $('#resource_name').html('');
-        for(i=0; i <= this.resourceNames.length; i++){
-          $('#resource_name').append('<option>' + this.resourceNames[i] + '</option>');
-        }
-      }, this), 500)
-    
   },
-  resourceNames: [],
+  populateResourceNames: function(){
+    $('#resource_name').html('');
+    for(i=0; i <= Localize.resourceNames.length; i++){
+      $('#resource_name').append('<option>' + Localize.resourceNames[i] + '</option>');
+    }
+    console.log('resource names populated');
+  },
+
   availableLanguages: function(){
     $.ajax({
       url: this.availableLanguagesUrl(),
@@ -140,7 +160,16 @@ var Localize = {
           $.each(responseData.available_languages, $.proxy(function(key, value){
               this.AVAILABLE_LANGUAGES.push(value.code);
             }, this));
-        }, this)
+          if(this.AVAILABLE_LANGUAGES.length != 0){
+            this.onSuccess(this.fetchAllStrings);
+          } else {
+            console.log('cant find avail langs');
+          }
+        }, this),
+      error: function(jqXHR, textStatus, errorThrown){
+        console.log(jqXHR, textStatus, errorThrown);
+        this.onError(jqXHR);
+      }
     });
   },
   fetchStrings: function(language, url) {
@@ -150,17 +179,21 @@ var Localize = {
       success: $.proxy(function(data){
         this.translated[language] = data;
         console.log('Found strings for ' + language.toUpperCase());
+        this.onSuccess(this.generateKeyList);
+        console.log('fetchStrings')
       }, this),
-      error: function() {
-        console.log(arguments);
+      error: function(jqXHR, textStatus, errorThrown){
+        this.onError(jqXHR);
       }
     });
   },
 
   fetchAllStrings: function() {
-        $.each(this.AVAILABLE_LANGUAGES, $.proxy(function(index, language) { //Go through each item in availableLanguages()
-          this.fetchStrings(language, this.stringsUrl(language));
+        $.each(Localize.AVAILABLE_LANGUAGES, $.proxy(function(index, language) { //Go through each item in availableLanguages()
+          Localize.fetchStrings(language, Localize.stringsUrl(language));
         }, this));
+        //callback('fetched ' + this.AVAILABLE_LANGUAGES);
+        //this.onSuccess(this.generateKeyList);
     },
 
     getTranslatedString: function(language, key) {
@@ -188,19 +221,15 @@ var Localize = {
     },
 
     generateKeyList: function() { //onclick from "Get strangs" button above
-
       $('#trans').html("");
-
       //Generate clickable keys
-      $.each(this.translated['en'], $.proxy(function(index, translated) {
+      $.each(Localize.translated['en'], $.proxy(function(index, translated) {
         var key = $('<a class="key"></a>').text(translated.key);
         $('#trans').append(key);
 
         key.bind('click', $.proxy(function(event) {
           event.preventDefault();
-
-          this.generateTranslatedText(translated.key); //onclick generate textarea with translated object
-
+          Localize.generateTranslatedText(translated.key); //onclick generate textarea with translated object
         }, this));
       }, this));
     },
@@ -211,28 +240,7 @@ var Localize = {
   };
 
   $(function(){
-    $('#resource_name').on('focus', function(event){
-      event.preventDefault();
-      console.log($('#resource_name').val());
-      if($('#project_name').val() != ''){
-        Localize.getResourceNames();
-      } else {
-        console.log('ERROR: Enter project name!')
-      }
-
-    });
-
-    $('form').on('submit', function(event){
-      event.preventDefault();
-      if($('#resource_name').val() != '' && $('#project_name').val() != ''){
-        $('.error').fadeOut();
-        $('.loading').fadeIn();
-        Localize.init();
-        $('.loading').fadeOut();
-      } else {
-        $('.error').fadeIn();
-      }
-    });
+    Localize.init();
   });
 
   </script>
