@@ -28,6 +28,10 @@ Note:  If you want to use a private project and aren't sure of your project name
 
 12. Watch it do all of the work for you!
 
+Demo
+====================
+http://nerdylocks.github.io/localize-tfex-to-psd/demo/
+
 License
 ====================
 All code licensed under the MIT License.
