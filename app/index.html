@@ -1,0 +1,248 @@
+<!DOCTYPE>
+<html>
+<head>
+  <title>PO to PSD</title>
+
+  <link href="css/bootstrap.css" rel="stylesheet">
+  <style>
+
+  input[type=text], select {
+    height: 43px;
+  }
+  .key {
+    display: block;
+    margin-bottom: 10px;
+    cursor: pointer;
+  }
+  .key:hover {
+
+  }
+  textarea {
+    width:400px;
+    min-height:200px;
+    resize: none;
+  }
+  .loading, .error, .noresource {
+    position: absolute;
+    top: 30px;
+    left: 40%;
+    display: none;
+  }
+  #get_strings, #download_script {
+    margin-top: -10px;
+    margin-left: 14px;
+  }
+  #trans {
+    width: 48%;
+    float: left;
+  }
+  #strings {
+    width: 48%;
+    float: right;
+  }
+  </style>
+  <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="masterhead">
+        <div class="span12">
+          <h3 class="muted">PO to PSD</h3>
+          <br>
+          <div class="loading alert alert-success">Fetching Data...</div>
+          <div class="error alert alert-error">Error: Fill empty feilds</div>
+          <div class="noresource alert alert-error">Error: Pro</div>
+        </div>
+        <!--  <div class="span5"><img style="float: right;" src="/img/nitro_logo.png" alt=""></div> -->
+
+      </div>
+    </div>
+    <div class="row">
+      <div class="span8">
+        <form action="/">
+          <input type="text" id="project_name" placeholder="Enter project name" name="project_name">
+          <!-- <input type="text" id="resource_name" placeholder="Enter Resource Name" data-provide="typeahead"> -->
+          <select name="resource_name" placeholder="Enter Resource Name" id="resource_name">
+            <option value="">Select Resource</option>
+          </select>
+          <button href="#" class="btn btn-primary btn-large" id="get_strings">Get Strings</button>
+        </form>
+      </div>
+      <div class="span4">
+      </div>
+    </div>
+    <br><br>
+    <div class="row">
+      <div class="span12">
+        <div id="trans"></div>
+        <div id="strings"></div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+var Localize = {
+  API_ENDPOINT : "https://www.transifex.com/api/2/project/",
+  translated : {},
+  AVAILABLE_LANGUAGES: [],
+  resourceNames: [],
+  init: function(){
+    $('#resource_name').on('focus', $.proxy(function(event){
+        event.preventDefault();
+        if($('#project_name').val() !== ''){
+          this.getResourceNames();
+        }
+    }, this));
+
+    $('form').on('submit', $.proxy(function(event){
+      event.preventDefault();
+      if($('#resource_name').val() != '' && $('#project_name').val() != ''){
+        $('.error').fadeOut();
+        $('.loading').fadeIn();
+        this.availableLanguages();
+        $('.loading').fadeOut();
+      } else {
+        $('.error').fadeIn();
+      }
+    }, this));
+  },
+  onSuccess: function(callback){
+    callback();
+  },
+  onError: function(error, callback){
+    console.log(error);
+    callback();
+  },
+  resourcesUrl:function(){
+    return this.API_ENDPOINT + $('#project_name').val() + '/resources/';
+  },
+  availableLanguagesUrl: function(){
+    return this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/?details'
+  },
+  stringsUrl: function(language) {
+    return this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/translation/' + language + '/strings/';
+  },
+  getResourceNames: function() {
+    $('#resource_name').val('');
+    $.ajax({
+      url: this.resourcesUrl(),
+      dataType: 'jsonp',
+      success: $.proxy(function(data){
+        this.resourceNames = [];
+        var slugNames = data;
+        $.each(slugNames, $.proxy(function(i, item){
+              this.resourceNames.push(slugNames[i].name);
+            }, this));
+        this.onSuccess($.proxy(this.populateResourceNames, this));
+      }, this),
+      error: function(jqXHR, textStatus, errorThrown){
+        console.log(jqXHR, textStatus, errorThrown);
+        this.onError(jqXHR);
+      }
+    });
+  },
+  populateResourceNames: function(){
+    $('#resource_name').html('');
+    for(i=0; i <= this.resourceNames.length; i++){
+      $('#resource_name').append('<option>' + this.resourceNames[i] + '</option>');
+    }
+    console.log('resource names populated');
+  },
+
+  availableLanguages: function(){
+    $.ajax({
+      url: this.availableLanguagesUrl(),
+      dataType: 'jsonp',
+      success: $.proxy(function(responseData){
+          this.AVAILABLE_LANGUAGES = []; //emptiesout array
+          $.each(responseData.available_languages, $.proxy(function(key, value){
+              this.AVAILABLE_LANGUAGES.push(value.code);
+            }, this));
+          if(this.AVAILABLE_LANGUAGES.length != 0){
+            this.onSuccess($.proxy(this.fetchAllStrings, this));
+          } else {
+            console.log('cant find avail langs');
+          }
+        }, this),
+      error: function(jqXHR, textStatus, errorThrown){
+        console.log(jqXHR, textStatus, errorThrown);
+        this.onError(jqXHR);
+      }
+    });
+  },
+  fetchStrings: function(language, url) {
+    $.ajax({
+      url: url,
+      dataType: 'jsonp',
+      success: $.proxy(function(data){
+        this.translated[language] = data;
+        console.log('Found strings for ' + language.toUpperCase());
+        setTimeout($.proxy(function(){
+          this.onSuccess($.proxy(this.generateKeyList, this));
+        }, this), 500);
+      }, this),
+      error: function(jqXHR, textStatus, errorThrown){
+        this.onError(jqXHR);
+      }
+    });
+  },
+
+  fetchAllStrings: function() {
+        $.each(this.AVAILABLE_LANGUAGES, $.proxy(function(index, language) { //Go through each item in availableLanguages()
+          this.fetchStrings(language, this.stringsUrl(language));
+        }, this));
+    },
+
+    getTranslatedString: function(language, key) {
+
+      var translatedString;
+      $.each(this.translated[language], $.proxy(function(index, translatedObject) { //Go through each translation in specified langauge
+        if (language == 'en') {
+          translatedString = key;
+        } else if (translatedObject.key == key) {
+          translatedString = translatedObject.translation;
+        }
+      }, this));
+
+      return translatedString;
+
+    },
+
+    getAllTranslatedStrings: function(key) {
+      var languages = {};
+      $.each(Localize.AVAILABLE_LANGUAGES, $.proxy(function(index, language) {
+        languages[language] = Localize.getTranslatedString(language, key);
+      }, this));
+
+      return languages;
+    },
+
+    generateKeyList: function() { //onclick from "Get strangs" button above
+      $('#trans').html("");
+      //Generate clickable keys
+      $.each(Localize.translated['en'], $.proxy(function(index, translated) {
+        var key = $('<a class="key"></a>').text(translated.key);
+        $('#trans').append(key);
+
+        key.bind('click', $.proxy(function(event) {
+          event.preventDefault();
+          this.generateTranslatedText(translated.key); //onclick generate textarea with translated object
+        }, this));
+      }, this));
+    },
+    generateTranslatedText: function(key) {
+      var textarea = $('<textarea id="strings_to_copy"></textarea>').val(JSON.stringify(this.getAllTranslatedStrings(key)));
+      $('#strings').html(textarea);
+      var textareaHeight = $('#strings_to_copy').val().length / 4;
+      $('#strings_to_copy').css('height', textareaHeight + 'px');
+    }
+  };
+
+  $(function(){
+    Localize.init();
+  });
+
+  </script>
+  </html>
