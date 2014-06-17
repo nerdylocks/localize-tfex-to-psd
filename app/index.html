@@ -116,13 +116,13 @@ var Localize = {
     callback();
   },
   resourcesUrl:function(){
-    return this.API_ENDPOINT + $('#project_name').val() + '/resources/';
+    return encodeURI(this.API_ENDPOINT + $('#project_name').val() + '/resources/');
   },
   availableLanguagesUrl: function(){
-    return this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/?details'
+    return encodeURI(this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/?details');
   },
   stringsUrl: function(language) {
-    return this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/translation/' + language + '/strings/';
+    return encodeURI(this.API_ENDPOINT + $('#project_name').val() + '/resource/' + $('#resource_name').val() + '/translation/' + language + '/strings/');
   },
   getResourceNames: function() {
     $('#resource_name').val('');
@@ -133,7 +133,7 @@ var Localize = {
         this.resourceNames = [];
         var slugNames = data;
         $.each(slugNames, $.proxy(function(i, item){
-              this.resourceNames.push(slugNames[i].name);
+            this.resourceNames.push({name: slugNames[i].name, slugname: slugNames[i].slug});
             }, this));
         this.onSuccess($.proxy(this.populateResourceNames, this));
       }, this),
@@ -145,8 +145,8 @@ var Localize = {
   },
   populateResourceNames: function(){
     $('#resource_name').html('');
-    for(i=0; i <= this.resourceNames.length; i++){
-      $('#resource_name').append('<option>' + this.resourceNames[i] + '</option>');
+    for(i=0; i < this.resourceNames.length; i++){
+      $('#resource_name').append('<option value="' + this.resourceNames[i].slugname + '">' + this.resourceNames[i].name + '</option>');
     }
     console.log('resource names populated');
   },
@@ -219,7 +219,7 @@ var Localize = {
       return languages;
     },
 
-    generateKeyList: function() { //onclick from "Get strangs" button above
+    generateKeyList: function() { //onclick from "Get strings" button above
       $('#trans').html("");
       //Generate clickable keys
       $.each(Localize.translated['en'], $.proxy(function(index, translated) {
